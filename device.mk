@@ -14,9 +14,13 @@
 # limitations under the License.
 #
 
+# A/B Updater
+AB_OTA_UPDATER := true
+
 AB_OTA_PARTITIONS += \
     boot \
-    system
+    system \
+    vendor
 
 AB_OTA_POSTINSTALL_CONFIG += \
     RUN_POSTINSTALL_system=true \

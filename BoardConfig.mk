@@ -72,7 +72,6 @@ TARGET_RECOVERY_WIPE := $(DEVICE_PATH)/recovery/root/etc/recovery.wipe
 
 # A/B
 BOARD_USES_RECOVERY_AS_BOOT := true
-AB_OTA_UPDATER := true
 TARGET_OTA_ASSERT_DEVICE := deen,deen_sprout
 
 # TWRP Configuration
@@ -102,8 +101,3 @@ ifeq ($(strip $(TW_DEBUG_BUILD)),)
 TARGET_USES_LOGD := true
 TWRP_INCLUDE_LOGCAT := true
 endif
-
-# Vendor
-BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
-TARGET_COPY_OUT_VENDOR := vendor
-TARGET_COPY_OUT_PRODUCT := product
