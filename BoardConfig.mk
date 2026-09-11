@@ -58,8 +58,12 @@ BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100
 LZMA_RAMDISK_TARGETS := recovery
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/Image.gz-dtb
+
+ifeq ($(strip $(TARGET_PREBUILT_KERNEL)),)
 TARGET_KERNEL_CONFIG := deen_defconfig
 TARGET_KERNEL_SOURCE := kernel/motorola/deen
+endif
 
 # Partitions
 BOARD_FLASH_BLOCK_SIZE := 131072
