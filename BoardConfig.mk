@@ -40,9 +40,9 @@ TARGET_NO_BOOTLOADER := true
 PLATFORM_VERSION := 16.1.0
 PLATFORM_SECURITY_PATCH := 2099-12-31
 TARGET_HW_DISK_ENCRYPTION := true
-TW_INCLUDE_FBE_METADATA_DECRYPT := true
 BOARD_USES_METADATA_PARTITION := true
-TW_INCLUDE_CRYPTO_FBE := true
+TARGET_CRYPTFS_HW_PATH =: vendor/qcom/opensource/commonsys/cryptfs_hw
+TARGET_USES_METADATA_AS_FDE_KEY := true
 
 # GPT Utils
 BOARD_PROVIDES_GPTUTILS := true
@@ -80,6 +80,7 @@ TW_USE_TOOLBOX := true
 RECOVERY_SDCARD_ON_DATA := true
 TARGET_RECOVERY_QCOM_RTC_FIX := true
 TW_INCLUDE_CRYPTO := true
+TARGET_RECOVERY_DEVICE_MODULES += android.hardware.boot@1.0
 TW_NEW_ION_HEAP := true
 TW_SCREEN_BLANK_ON_BOOT := true
 TW_THEME := portrait_hdpi
@@ -101,20 +102,6 @@ ifeq ($(strip $(TW_DEBUG_BUILD)),)
 TARGET_USES_LOGD := true
 TWRP_INCLUDE_LOGCAT := true
 endif
-
-TARGET_RECOVERY_DEVICE_MODULES += \
-	android.hardware.boot@1.0 \
-    libicuuc \
-    libxml2 \
-    libion \
-    android.hidl.base@1.0
-
-TW_RECOVERY_ADDITIONAL_RELINK_FILES += \
-    $(TARGET_OUT_SHARED_LIBRARIES)/libicuuc.so \
-    $(TARGET_OUT_SHARED_LIBRARIES)/libxml2.so \
-    $(TARGET_OUT_SHARED_LIBRARIES)/libion.so \
-    $(TARGET_OUT)/lib64/android.hidl.base@1.0.so \
-    $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.boot@1.0.so
 
 # Vendor
 BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
