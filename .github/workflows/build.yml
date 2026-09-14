@@ -1,18 +1,19 @@
-name: Build TWRP 9 - deen
+name: Build TWRP 10 - deen
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build TWRP 9 for deen
+    name: Build TWRP 10 for deen
     runs-on: ubuntu-24.04
 
     env:
-      SOURCE_DIR: ${{ github.workspace }}/twrp9
+      SOURCE_DIR: ${{ github.workspace }}/twrp10
       DEVICE: deen
       DEVICE_NAME: Motorola One
       ALLOW_MISSING_DEPENDENCIES: "true"
+      WITH_DEXPREOPT: "false"
       DEBIAN_FRONTEND: noninteractive
 
     steps:
@@ -148,7 +149,7 @@ jobs:
       # TWRP source
       # ============================================================
 
-      - name: Initialize TWRP 9 source
+      - name: Initialize TWRP 10 source
         shell: bash
         run: |
           mkdir -p "$SOURCE_DIR"
@@ -157,7 +158,7 @@ jobs:
           "$HOME/bin/repo" init \
             --depth=1 \
             -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git \
-            -b twrp-9.0
+            -b twrp-10.0-deprecated
 
       - name: Sync TWRP source
         shell: bash
@@ -172,6 +173,33 @@ jobs:
             --no-clone-bundle \
             --no-tags \
             -j4
+
+      - name: Validate synced source
+        shell: bash
+        run: |
+          cd "$SOURCE_DIR"
+
+          echo "========================================"
+          echo "Validating TWRP source"
+          echo "========================================"
+
+          if [ ! -f build/envsetup.sh ]; then
+            echo "build/envsetup.sh not found"
+            exit 1
+          fi
+
+          if [ ! -d bootable/recovery ]; then
+            echo "bootable/recovery not found"
+            exit 1
+          fi
+
+          if [ ! -d prebuilts/python/linux-x86/2.7.5 ]; then
+            echo "Bundled Python 2.7.5 not found"
+            exit 1
+          fi
+
+          echo
+          echo "Source validation passed."
 
       - name: Check source disk usage
         shell: bash
@@ -204,7 +232,7 @@ jobs:
           git clone \
             --depth=1 \
             --single-branch \
-            -b android-9.0 \
+            -b android-10 \
             https://github.com/Vhmit/device_motorola_deen-twrp.git \
             device/motorola/deen
 
@@ -212,23 +240,23 @@ jobs:
           echo "deen device tree:"
           git -C device/motorola/deen log -1 --oneline
 
-      - name: Clone Qualcomm common tree
+      - name: Clone Qualcomm TWRP common tree
         shell: bash
         run: |
           cd "$SOURCE_DIR"
 
-          rm -rf device/qcom/common
+          rm -rf device/qcom/twrp-common
 
           git clone \
             --depth=1 \
             --single-branch \
-            -b android-9.0 \
-            https://github.com/TeamWin/android_device_qcom_common.git \
-            device/qcom/common
+            -b android-10 \
+            https://github.com/TeamWin/android_device_qcom_twrp-common.git \
+            device/qcom/twrp-common
 
           echo
-          echo "Qualcomm common tree:"
-          git -C device/qcom/common log -1 --oneline
+          echo "Qualcomm TWRP common tree:"
+          git -C device/qcom/twrp-common log -1 --oneline
 
       - name: Clone Qualcomm commonsys
         shell: bash
@@ -240,7 +268,7 @@ jobs:
           git clone \
             --depth=1 \
             --single-branch \
-            -b android-9.0 \
+            -b android-10 \
             https://github.com/TeamWin/android_vendor_qcom_opensource_commonsys.git \
             vendor/qcom/opensource/commonsys
 
@@ -249,10 +277,10 @@ jobs:
           git -C vendor/qcom/opensource/commonsys log -1 --oneline
 
       # ============================================================
-      # Python compatibility
+      # Python 2 compatibility
       # ============================================================
 
-      - name: Configure Python compatibility
+      - name: Configure Python 2
         shell: bash
         run: |
           cd "$SOURCE_DIR"
@@ -274,69 +302,30 @@ jobs:
 
           sudo ln -sf "$PYTHON2" /usr/bin/python
 
-          mkdir -p "$HOME/twrp9-host-bin"
+          mkdir -p "$HOME/twrp10-host-bin"
 
-          cat > "$HOME/twrp9-host-bin/python" <<EOF
-          #!/bin/bash
-
-          case "\$1" in
-              *generate_operator_out*|*build_sepolicy*)
-                  exec /usr/bin/python3 "\$@"
-                  ;;
-              *)
-                  exec "$PYTHON2" "\$@"
-                  ;;
-          esac
-          EOF
-
-          chmod +x "$HOME/twrp9-host-bin/python"
+          ln -sf \
+            "$PYTHON2" \
+            "$HOME/twrp10-host-bin/python"
 
           ln -sf \
             "$PYTHON27" \
-            "$HOME/twrp9-host-bin/python2.7"
+            "$HOME/twrp10-host-bin/python2.7"
 
-          echo "$HOME/twrp9-host-bin" >> "$GITHUB_PATH"
+          echo "$HOME/twrp10-host-bin" >> "$GITHUB_PATH"
 
           echo
-          echo "Python configuration:"
+          echo "========================================"
+          echo "Python configuration"
+          echo "========================================"
+
           /usr/bin/python --version
-          "$HOME/twrp9-host-bin/python" --version
-          "$HOME/twrp9-host-bin/python2.7" --version
+          "$HOME/twrp10-host-bin/python" --version
+          "$HOME/twrp10-host-bin/python2.7" --version
+
+          echo
+          echo "System Python 3:"
           python3 --version
-
-      # ============================================================
-      # Old Clang runtime
-      # ============================================================
-
-      - name: Configure old Clang runtime libraries
-        shell: bash
-        run: |
-          cd "$SOURCE_DIR"
-
-          OLD_SYSROOT="$SOURCE_DIR/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.15-4.8/sysroot/usr/lib"
-          HOST_LIBS="$HOME/twrp9-host-libs"
-
-          mkdir -p "$HOST_LIBS"
-
-          if [ ! -f "$OLD_SYSROOT/libtinfo.so.5.9" ]; then
-            echo "libtinfo.so.5.9 not found"
-            exit 1
-          fi
-
-          if [ ! -f "$OLD_SYSROOT/libncurses.so.5.9" ]; then
-            echo "libncurses.so.5.9 not found"
-            exit 1
-          fi
-
-          ln -sf \
-            "$OLD_SYSROOT/libtinfo.so.5.9" \
-            "$HOST_LIBS/libtinfo.so.5"
-
-          ln -sf \
-            "$OLD_SYSROOT/libncurses.so.5.9" \
-            "$HOST_LIBS/libncurses.so.5"
-
-          echo "LD_LIBRARY_PATH=$HOST_LIBS" >> "$GITHUB_ENV"
 
       # ============================================================
       # Telegram - build started
@@ -345,7 +334,7 @@ jobs:
       - name: Notify build started
         shell: bash
         run: |
-          MESSAGE="🚀 *TWRP 9 build started!*
+          MESSAGE="🚀 *TWRP 10 build started!*
           📱 *Device:* \`${{ env.DEVICE_NAME }} (${{ env.DEVICE }})\`
           📦 *Repo:* \`${{ github.repository }}\`
           🌿 *Branch:* \`${{ github.ref_name }}\`
@@ -397,9 +386,9 @@ jobs:
           set -o pipefail
 
           {
-            export PATH="$HOME/twrp9-host-bin:$PATH"
-            export LD_LIBRARY_PATH="$HOME/twrp9-host-libs"
+            export PATH="$HOME/twrp10-host-bin:$PATH"
             export ALLOW_MISSING_DEPENDENCIES=true
+            export WITH_DEXPREOPT=false
 
             hash -r
 
@@ -417,6 +406,10 @@ jobs:
               echo
               echo "Java:"
               java -version
+
+              echo
+              echo "ALLOW_MISSING_DEPENDENCIES=$ALLOW_MISSING_DEPENDENCIES"
+              echo "WITH_DEXPREOPT=$WITH_DEXPREOPT"
 
               echo
               echo "========================================"
@@ -482,7 +475,7 @@ jobs:
             LOG_FILE="$SOURCE_DIR/logs/failure.log"
 
             {
-              echo "TWRP 9 build failed."
+              echo "TWRP 10 build failed."
               echo
               echo "Device: deen"
               echo "Repository: ${{ github.repository }}"
@@ -515,7 +508,7 @@ jobs:
             echo "$RESPONSE"
 
             {
-              echo "## ❌ TWRP build failed"
+              echo "## ❌ TWRP 10 build failed"
               echo
               echo "### Rustbin"
               echo
@@ -564,7 +557,7 @@ jobs:
 
           ERROR_URL="${ERROR_LOG_URL:-https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}}"
 
-          MESSAGE="❌ *TWRP 9 build failed!*
+          MESSAGE="❌ *TWRP 10 build failed!*
           📱 *Device:* \`${{ env.DEVICE_NAME }} (${{ env.DEVICE }})\`
           📦 *Repo:* \`${{ github.repository }}\`
           🌿 *Branch:* \`${{ github.ref_name }}\`
@@ -608,7 +601,7 @@ jobs:
           mkdir -p "$SOURCE_DIR/release"
 
           BOOT_IMAGE="$SOURCE_DIR/out/target/product/deen/boot.img"
-          RELEASE_IMAGE="$SOURCE_DIR/release/twrp-deen-3.7.0_9.0.img"
+          RELEASE_IMAGE="$SOURCE_DIR/release/twrp-deen-3.7.0_10.0.img"
 
           if [ ! -f "$BOOT_IMAGE" ]; then
             echo "boot.img not found:"
@@ -626,6 +619,7 @@ jobs:
           echo "========================================"
           echo "Boot image prepared"
           echo "========================================"
+
           echo "Build duration: $BUILD_DURATION"
 
           echo
@@ -639,7 +633,7 @@ jobs:
       # ============================================================
       # GoFile
       #
-      # GoFile failure DOES NOT fail the build.
+      # GoFile failure does NOT fail the build.
       # ============================================================
 
       - name: Upload boot image to GoFile
@@ -699,11 +693,11 @@ jobs:
             echo "$DOWNLOAD_URL"
 
             {
-              echo "## ✅ TWRP 9 build completed"
+              echo "## ✅ TWRP 10 build completed"
               echo
               echo "### File"
               echo
-              echo "\`twrp-deen-3.7.0_9.0.img\`"
+              echo "\`twrp-deen-3.7.0_10.0.img\`"
               echo
               echo "### GoFile"
               echo
@@ -741,9 +735,9 @@ jobs:
             fi
 
             {
-              echo "## ⚠️ TWRP 9 build completed"
+              echo "## ⚠️ TWRP 10 build completed"
               echo
-              echo "\`twrp-deen-3.7.0_9.0.img\` was generated successfully,"
+              echo "\`twrp-deen-3.7.0_10.0.img\` was generated successfully,"
               echo "but the GoFile upload failed."
               echo
               echo "### Build time"
@@ -768,12 +762,12 @@ jobs:
         run: |
           if [ "${UPLOAD_SUCCESS:-false}" = "true" ]; then
 
-            MESSAGE="✅ *TWRP 9 build completed!*
+            MESSAGE="✅ *TWRP 10 build completed!*
           📱 *Device:* \`${{ env.DEVICE_NAME }} (${{ env.DEVICE }})\`
           📦 *Repo:* \`${{ github.repository }}\`
           🌿 *Branch:* \`${{ github.ref_name }}\`
           ⏱️ *Build time:* \`${{ env.BUILD_DURATION }}\`
-          📄 *File:* \`twrp-deen-3.7.0_9.0.img\`
+          📄 *File:* \`twrp-deen-3.7.0_10.0.img\`
           ☁️ *Upload:* \`GoFile\`
           🆔 *Run ID:* \`${{ github.run_id }}\`"
 
@@ -781,12 +775,12 @@ jobs:
 
           else
 
-            MESSAGE="✅ *TWRP 9 build completed!*
+            MESSAGE="✅ *TWRP 10 build completed!*
           📱 *Device:* \`${{ env.DEVICE_NAME }} (${{ env.DEVICE }})\`
           📦 *Repo:* \`${{ github.repository }}\`
           🌿 *Branch:* \`${{ github.ref_name }}\`
           ⏱️ *Build time:* \`${{ env.BUILD_DURATION }}\`
-          📄 *File:* \`twrp-deen-3.7.0_9.0.img\`
+          📄 *File:* \`twrp-deen-3.7.0_10.0.img\`
           ⚠️ *Upload:* \`GoFile failed\`
           🆔 *Run ID:* \`${{ github.run_id }}\`"
 
@@ -828,7 +822,7 @@ jobs:
             BUILD_DURATION="unknown"
           fi
 
-          MESSAGE="⏹️ *TWRP 9 build cancelled!*
+          MESSAGE="⏹️ *TWRP 10 build cancelled!*
           📱 *Device:* \`${{ env.DEVICE_NAME }} (${{ env.DEVICE }})\`
           📦 *Repo:* \`${{ github.repository }}\`
           🌿 *Branch:* \`${{ github.ref_name }}\`
