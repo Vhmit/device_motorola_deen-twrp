@@ -39,24 +39,15 @@ PRODUCT_PACKAGES += \
     update_engine_sideload \
     update_verifier
 
-# The following modules are included in debuggable builds only.
-PRODUCT_PACKAGES_DEBUG += \
-    bootctl \
-    update_engine_client
-
 # Boot control HAL
 PRODUCT_PACKAGES += \
-    bootctrl.msm8953 \
     android.hardware.boot@1.0-impl \
-    android.hardware.boot@1.0-service
-
-# Enable update engine sideloading by including the static version of the
-# boot_control HAL and its dependencies.
-PRODUCT_STATIC_BOOT_CONTROL_HAL := \
+    android.hardware.boot@1.0-service \
+    android.hardware.boot@1.0-impl-wrapper.recovery \
+    android.hardware.boot@1.0-impl-wrapper \
+    android.hardware.boot@1.0-impl.recovery \
     bootctrl.msm8953 \
-    libgptutils \
-    libz \
-    libcutils
+    bootctrl.msm8953.recovery
 
 PRODUCT_HOST_PACKAGES += \
     libandroidicu
