@@ -1,0 +1,5 @@
+ro.display.series=motorola one
+ro.product.board=msm8953
+ro.board.platform=msm8953
+ro.hardware.keystore=msm8953
+ro.hardware.bootctrl=msm8953
