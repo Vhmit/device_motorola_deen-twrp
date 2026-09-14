@@ -25,98 +25,21 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+import /init.recovery.qcom_decrypt.rc
+
+on init
+    setprop prepdecrypt.loglevel 2
+
 on fs
     wait /dev/block/platform/soc/${ro.boot.bootdevice}
     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
-    export LD_LIBRARY_PATH /system/lib64:/system/vendor/lib64:/vendor/lib64:/vendor/lib64/hw
-    export ANDROID_ROOT /system_root
+
     chmod 0660 /dev/qseecom
     chown system drmrpc /dev/qseecom
+
     chmod 0664 /dev/ion
     chown system system /dev/ion
-
-    start hwservicemanager
-    start servicemanager
 
 on boot
     setprop sys.usb.config none
     setprop sys.usb.config adb
-
-on property:ro.crypto.state=encrypted && property:ro.crypto.type=file
-    install_keyring
-
-on property:ro.crypto.state=encrypted
-    start prepdecrypt
-
-on property:crypto.ready=1
-    start sbinqseecomd
-
-on property:sys.listeners.registered=true && property:ro.crypto.type=block
-    start keymaster-3-0
-
-on property:sys.listeners.registered=true && property:ro.crypto.type=file
-    start keymaster-3-0
-    start gatekeeper-1-0
-
-on property:ro.crypto.fs_crypto_blkdev=* && property:ro.crypto.type=block
-    setprop crypto.ready 0
-    stop sbinqseecomd
-    stop keymaster-3-0
-
-on property:twrp.all.users.decrypted=true 
-    setprop crypto.ready 0
-    stop sbinqseecomd
-    stop keymaster-3-0
-    stop gatekeeper-1-0
-
-service sbinqseecomd /system/bin/qseecomd
-    user root
-    group root
-    disabled
-    seclabel u:r:recovery:s0
-
-service prepdecrypt /system/bin/prepdecrypt.sh
-    oneshot
-    disabled
-    user root
-    group root
-    seclabel u:r:recovery:s0
-
-service hwservicemanager /system/bin/hwservicemanager
-    user root
-    group root
-    disabled
-    onrestart setprop hwservicemanager.ready false
-    seclabel u:r:recovery:s0
-
-service servicemanager /system/bin/servicemanager
-    user root
-    group root readproc
-    disabled
-    seclabel u:r:recovery:s0
-
-service keystore_auth /system/bin/keystore_auth
-    oneshot
-    user system
-    group root
-    disabled
-    seclabel u:r:recovery:s0
-
-# keystore is started and stopped on demand by TWRP
-service keystore /system/bin/keystore /tmp/misc/keystore
-    user root
-    group root drmrpc readproc
-    disabled
-    seclabel u:r:recovery:s0
-
-service gatekeeper-1-0 /system/bin/android.hardware.gatekeeper@1.0-service-qti
-    user root
-    group root
-    disabled
-    seclabel u:r:recovery:s0
-
-service keymaster-3-0 /system/bin/android.hardware.keymaster@3.0-service-qti
-    user root
-    group root
-    disabled
-    seclabel u:r:recovery:s0
