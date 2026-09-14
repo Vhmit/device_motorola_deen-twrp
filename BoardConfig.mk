@@ -42,7 +42,6 @@ TARGET_CRYPTFS_HW_PATH =: vendor/qcom/opensource/commonsys/cryptfs_hw
 TARGET_USES_METADATA_AS_FDE_KEY := true
 BOARD_USES_QCOM_DECRYPTION := true
 
-
 # Platform
 TARGET_BOARD_PLATFORM := msm8953
 TARGET_SUPPORTS_64_BIT_APPS := true
@@ -85,7 +84,7 @@ TW_USE_TOOLBOX := true
 RECOVERY_SDCARD_ON_DATA := true
 TARGET_RECOVERY_QCOM_RTC_FIX := true
 TW_INCLUDE_CRYPTO := true
-TARGET_RECOVERY_DEVICE_MODULES += android.hardware.boot@1.0
+TARGET_RECOVERY_DEVICE_MODULES += android.hardware.boot@1.0 libxml2
 TW_NEW_ION_HEAP := true
 TW_SCREEN_BLANK_ON_BOOT := true
 TW_THEME := portrait_hdpi
@@ -100,6 +99,12 @@ TW_H_OFFSET := -74
 TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 TW_OVERRIDE_SYSTEM_PROPS := \
 "ro.build.product;ro.build.fingerprint=ro.system.build.fingerprint;ro.build.version.incremental;ro.product.device=ro.product.system.device;ro.product.model=ro.product.system.model;ro.product.name=ro.product.system.name"
+
+TW_RECOVERY_ADDITIONAL_RELINK_FILES += \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libxml2.so
+
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libxml2.so
 
 # Recovery Installer
 USE_RECOVERY_INSTALLER := true
