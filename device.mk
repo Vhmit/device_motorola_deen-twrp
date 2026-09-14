@@ -58,13 +58,16 @@ PRODUCT_STATIC_BOOT_CONTROL_HAL := \
     libz \
     libcutils
 
+PRODUCT_HOST_PACKAGES += \
+    libandroidicu
+
 # Blacklist
 PRODUCT_SYSTEM_PROPERTY_BLACKLIST += \
     ro.bootimage.build.date.utc \
     ro.build.date.utc
 
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.vendor.build.security_patch=2099-12-31
-
 PRODUCT_PACKAGES += \
     qcom_decrypt
+     
+PRODUCT_PACKAGES += \
+    libhardware_legacy

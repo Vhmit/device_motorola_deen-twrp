@@ -23,6 +23,10 @@ $(call inherit-product, vendor/omni/config/common.mk)
 # Inherit from deen device
 $(call inherit-product, device/motorola/deen/device.mk)
 
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.hardware.keystore=msm8953 \
+    ro.hardware.bootctrl=msm8953
+
 # Device identifier. This must come after all inclusions
 PRODUCT_DEVICE := deen
 PRODUCT_NAME := omni_deen
