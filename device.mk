@@ -59,6 +59,3 @@ PRODUCT_SYSTEM_PROPERTY_BLACKLIST += \
 
 PRODUCT_PACKAGES += \
     qcom_decrypt
-     
-PRODUCT_PACKAGES += \
-    libhardware_legacy
